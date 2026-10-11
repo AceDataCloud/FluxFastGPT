@@ -7,7 +7,7 @@ import {
 } from '@fastgpt-plugin/sdk-factory';
 import z from 'zod';
 
-import { submitGeneration, retrieveTask } from './src/client.ts';
+import { submitEdit, submitGeneration, retrieveTask } from './src/client.ts';
 
 const secretSchema = z.object({
   apiKey: z.string().min(1).meta({
@@ -38,6 +38,19 @@ const generateHandler = createToolHandler({
   handler: async (input, ctx) => submitGeneration(input, ctx.secrets?.apiKey ?? '')
 });
 
+const editHandler = createToolHandler({
+  inputSchema: z.object({
+    prompt: z.string().trim().min(1).max(10000).meta({ title: 'Edit prompt', isToolParam: true } satisfies InputSchemaMetaType),
+    imageUrl: z.string().url().startsWith('https://').meta({ title: 'Reference image URL' } satisfies InputSchemaMetaType),
+    model: z.string().trim().min(1).max(256).default('flux-kontext-pro').meta({ title: 'Model' } satisfies InputSchemaMetaType),
+    size: z.string().trim().min(1).max(256).default('1:1').meta({ title: 'Size' } satisfies InputSchemaMetaType),
+    count: z.number().int().min(1).max(60).default(1).meta({ title: 'Count' } satisfies InputSchemaMetaType),
+  }),
+  outputSchema,
+  secretSchema,
+  handler: async (input, ctx) => submitEdit(input, ctx.secrets?.apiKey ?? '')
+});
+
 const retrieveHandler = createToolHandler({
   inputSchema: z.object({
     taskId: z.string().trim().min(1).meta({
@@ -54,13 +67,13 @@ const retrieveHandler = createToolHandler({
 export default defineToolSet({
   manifest: {
     pluginId: 'acedataFlux',
-    version: '0.1.0',
+    version: '0.2.0',
     name: { en: 'Ace Data Cloud Flux', 'zh-CN': 'Ace Data Cloud Flux 图像' },
     description: {
       en: 'Generate image with Flux through Ace Data Cloud and retrieve the same task.',
       'zh-CN': '通过 Ace Data Cloud Flux 图像生成并查询同一任务。'
     },
-    versionDescription: { en: 'Initial release', 'zh-CN': '首次发布' },
+    versionDescription: { en: 'Align API limits, task status and edit actions', 'zh-CN': '对齐 API 限制和任务状态处理' },
     author: 'Ace Data Cloud',
     repoUrl: 'https://github.com/AceDataCloud/FluxFastGPT',
     tutorialUrl: 'https://github.com/AceDataCloud/FluxFastGPT#quick-start',
@@ -75,6 +88,13 @@ export default defineToolSet({
       description: { en: 'Submit one Flux generation and return its task ID.', 'zh-CN': '提交一次Flux 图像生成并返回任务 ID。' },
       toolDescription: 'Submit once. Do not call again to check a pending task.',
       handler: generateHandler
+    },
+    {
+      id: 'editImage',
+      name: { en: 'Edit image', 'zh-CN': '编辑图像' },
+      description: { en: 'Edit one authorized image and return its task ID.', 'zh-CN': '编辑一张经授权的图片并返回任务 ID。' },
+      toolDescription: 'Submit one edit. Use Retrieve task to check its ID without editing again.',
+      handler: editHandler
     },
     {
       id: 'retrieveTask',
