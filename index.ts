@@ -95,7 +95,7 @@ const batchHandler = createToolHandler({
 export default defineToolSet({
   manifest: {
     pluginId: 'acedataFlux',
-    version: '0.2.0',
+    version: '0.2.1',
     name: { en: 'Ace Data Cloud Flux', 'zh-CN': 'Ace Data Cloud Flux 图像' },
     description: {
       en: 'Generate image with Flux through Ace Data Cloud and retrieve the same task.',
